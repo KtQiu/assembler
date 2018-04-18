@@ -21,7 +21,7 @@ string dec2bin(int dec_num, int len_bin);
 
 string asm2bin(vector<string>& v);
 
-string bin2asm(vector<string> &v);
+string bin2asm(string bin_code);
 
 extern int pc;
 

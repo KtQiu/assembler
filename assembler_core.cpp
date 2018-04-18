@@ -72,30 +72,6 @@ void find_loop(istream &inf)
     }
 }
 
-//void read_file()
-//{
-//    string ass_code;
-//    ifstream inf;
-//    inf.open("test_assemble.s");
-//    while (getline(inf, ass_code))
-//    {
-//        cout << "The assemble language\t" << ass_code << endl;
-//    }
-//    return;
-//}
-
-////HACK：先判断文件是不是空的，追加的方式写入文件
-//void write_file(string &bin_code)
-//{
-//    ofstream outf("bin_code.bin");
-//    if (outf.is_open())
-//    {
-//        outf << bin_code;
-//        outf.close();
-//    }
-//    return;
-//}
-
 //HACK:分割汇编代码中不同的块,但是还缺少了对//的注释的实现，缺少对LOOP的实现
 //字符分割函数 遇到#就停止
 void split(const string &code, char *delimiter, int n_delimiter, vector<string> &v)
@@ -148,10 +124,13 @@ void split(const string &code, char *delimiter, int n_delimiter, vector<string> 
     }
 }
 
-int bin2dec_5bit(string array)
+int bin2dec(string binary, int length)
 {
     int dec_num = 0;
-    dec_num = (array[0] - '0') * 16 + (array[1] - '0') * 8 + (array[2] - '0') * 4 + (array[3] - '0') * 2 + (array[4] - '0');
+    for (int i = 0; i < length; i++)
+    {
+        dec_num += pow(binary[i] - '0', i);
+    }
     return dec_num;
 }
 
@@ -163,14 +142,11 @@ string dec2bin(int dec_num, int len_bin)
     for (int i = len_bin - 1; i >= 0; i--, dec_num >>= 1)
         bin += ('0' + (01 & dec_num));
     reverse(bin.begin(), bin.end());
-    /*bin += ((01 & dec_num) + '0'));*/
-    //bin[len_bin] = '\0';
-    //bin += '\0';
     return bin;
 }
 
-//HAVEDONE:R型和I型的实现
-//TODO:J型指令的实现，错误代码的提醒，当map没有这条指令的时候怎么办，虽然没有关系，但是可以实现报错
+//HAVEDONE:R，I，J指令的实现
+//TODO:汇编核心代码 基本实现   
 //使用tolower函数统一小写，然后用map去查找相应的 machine code
 
 string asm2bin(vector<string> &v)
@@ -352,3 +328,137 @@ string asm2bin(vector<string> &v)
     }
     return bin_code;
 }
+
+//@description:binary code to assemble
+string bin2asm(string bin_code)
+{
+    string asm_code;
+    asm_code = "heihei";
+    map<string, string> bin2asm_map;
+    map<string, string> reg_map;
+    string tag_bin;
+    string key_bin = bin_code.substr(0);
+    bin2asm_map = {
+        {"000000ssssstttttddddd00000100000", "add"},  //add $d, $s, $t
+        {"000000ssssstttttddddd00000100001", "addu"}, //addu $d, $s, $t
+        {"000000ssssstttttddddd00000100100", "and"},  //and $d, $s, $t
+        {"000000ssssstttttddddd00000100010", "sub"},  //sub $d, $s, $t
+        {"000000ssssstttttddddd00000100011", "subu"}, //subu $d, $s, $t
+        {"000000ssssstttttddddd00000100100", "and"},  //and $d, $s, $t
+        {"000000ssssstttttddddd00000100101", "or"},   //or  $d, $s, $t
+        {"000000ssssstttttddddd00000100110", "xor"},  // xor $d, $s, $t
+        {"000000ssssstttttddddd00000101010", "slt"},  // slt $d, $s, $t
+        {"000000ssssstttttddddd00000101011", "sltu"},
+        {"000000ssssstttttddddd00000000100", "sllv"},
+        {"000000ssssstttttddddd00000000110", "srlv"},
+
+        {"001000ssssstttttiiiiiiiiiiiiiiii", "addi"},  //addi $t, $s, imm
+        {"001001ssssstttttiiiiiiiiiiiiiiii", "addiu"}, //addiu $t, $s, imm
+        {"001100ssssstttttiiiiiiiiiiiiiiii", "andi"},  //andi $t, $s, imm
+        {"000100ssssstttttiiiiiiiiiiiiiiii", "beq"},   //beq $s, $t, offset
+        {"100011ssssstttttiiiiiiiiiiiiiiii", "lw"},    //lw $t, offset($s)
+        {"100000ssssstttttiiiiiiiiiiiiiiii", "lb"},    //lb $t, offset($s)
+        {"001101ssssstttttiiiiiiiiiiiiiiii", "ori"},
+        {"101011ssssstttttiiiiiiiiiiiiiiii", "sw"},
+        {"000101ssssstttttiiiiiiiiiiiiiiii", "bne"},
+        {"001010ssssstttttiiiiiiiiiiiiiiii", "slti"},
+        {"001011ssssstttttiiiiiiiiiiiiiiii", "sltiu"},
+
+        {"000010iiiiiiiiiiiiiiiiiiiiiiiiii", "j"},   //j target
+        {"000011iiiiiiiiiiiiiiiiiiiiiiiiii", "jal"}, //jal target
+        {"000000sssss000000000000000001000", "jr"},  //jr $s
+
+        {"00000000000tttttdddddhhhhh000000", "sll"}, //shift operation sll $d, $t, $d =$t « h
+        {"00000000000tttttdddddhhhhh000010", "srl"}, //
+        {"00000000000tttttdddddhhhhh000011", "sra"},
+    };
+
+    reg_map = {
+        {"00000", "$zero"},
+        {"00001", "$at"},
+        {"00010", "$v0"},
+        {"00011", "$v1"},
+        {"00100", "$a0"},
+        {"00101", "$a1"},
+        {"00110", "$a2"},
+        {"00111", "$a3"},
+        {"01000", "$t0"},
+        {"01001", "$t1"},
+        {"01010", "$t2"},
+        {"01011", "$t3"},
+        {"01100", "$t4"},
+        {"01101", "$t5"},
+        {"01110", "$t6"},
+        {"01111", "$t7"},
+        {"10000", "$s0"},
+        {"10001", "$s1"},
+        {"10010", "$s2"},
+        {"10011", "$s3"},
+        {"10100", "$s4"},
+        {"10101", "$s5"},
+        {"10110", "$s6"},
+        {"10111", "$s7"},
+        {"11000", "$t8"},
+        {"11001", "$t9"},
+        {"11010", "$k0"},
+        {"11011", "$k1"},
+        {"11100", "$gp"},
+        {"11101", "$sp"},
+        {"11110", "$fp"},
+        {"11111", "$ra"},
+    };
+
+    tag_bin = bin_code.substr(0, 6);
+    if (tag_bin == "000000" && bin_code.substr(6) == "000000000000000001000")
+    {
+        string reg_s = reg_map[bin_code.substr(6, 5)];
+        string opration = "jr";
+        asm_code = opration + " " + reg_s;
+    }
+    else if (tag_bin == "000000" && bin_code.substr(21, 5) == "00000")
+    {
+        key_bin.replace(6, 15, "ssssstttttddddd");
+        string opration = bin2asm_map[key_bin];
+        string reg_s = reg_map[bin_code.substr(6, 5)];
+        string reg_t = reg_map[bin_code.substr(11, 5)];
+        string reg_d = reg_map[bin_code.substr(16, 5)];
+        asm_code = opration + " " + reg_d + " " + reg_s + " " + reg_t;
+    }
+    else if (tag_bin == "000000")
+    {
+        key_bin.replace(11, 15, "tttttdddddhhhhh");
+        string opration = bin2asm_map[key_bin];
+        string reg_t = reg_map[bin_code.substr(11, 5)];
+        string reg_d = reg_map[bin_code.substr(16, 5)];
+        string imm = to_string(bin2dec(bin_code.substr(21, 5), 5));
+        asm_code = opration + " " + reg_d + " " + reg_t + " " + imm;
+    }
+    // J JAL    {"000010iiiiiiiiiiiiiiiiiiiiiiiiii", "j"},   j target
+    // TODO: 难点Ｊ类的指令跳转的位置，用location + num　统一 ,目前用他的jump的立即数表示
+    else if (tag_bin == "000010" || tag_bin == "000011")
+    {
+        key_bin.replace(6, 26, "iiiiiiiiiiiiiiiiiiiiiiiiii");
+        string opration = bin2asm_map[key_bin];
+        string imm = to_string(bin2dec(bin_code.substr(6), 26));
+        asm_code = opration + " " + imm;
+    }else
+    {
+        key_bin.replace(6, 26, "ssssstttttiiiiiiiiiiiiiiii");
+        string opration = bin2asm_map[key_bin];
+        string imm = to_string(bin2dec(bin_code.substr(16), 16));
+        string reg_s = reg_map[bin_code.substr(6, 5)];
+        string reg_t = reg_map[bin_code.substr(11, 5)];
+        asm_code = opration + " " + reg_t + " " + reg_s + " " + imm;
+    }
+    return asm_code;
+}
+
+// TODO: PC的地址的计算
+
+// TODO:simulation
+
+// TODO:文件的读取和保存的图形操作 crtl+o ...
+
+// TODO:代码的高亮实现
+
+// TODO: 错误代码的提醒，简单的debug功能
