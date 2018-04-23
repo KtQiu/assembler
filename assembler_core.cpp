@@ -146,7 +146,7 @@ string dec2bin(int dec_num, int len_bin)
 }
 
 //HAVEDONE:R，I，J指令的实现
-//TODO:汇编核心代码 基本实现   
+//TODO:汇编核心代码 基本实现
 //使用tolower函数统一小写，然后用map去查找相应的 machine code
 
 string asm2bin(vector<string> &v)
@@ -333,7 +333,10 @@ string asm2bin(vector<string> &v)
 string bin2asm(string bin_code)
 {
     string asm_code;
-    asm_code = "heihei";
+// trim space
+    auto itor = remove_if(bin_code.begin(), bin_code.end(), ::isspace);
+    bin_code.erase(itor, bin_code.end());
+
     map<string, string> bin2asm_map;
     map<string, string> reg_map;
     string tag_bin;
